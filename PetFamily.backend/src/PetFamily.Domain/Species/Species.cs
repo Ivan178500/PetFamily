@@ -41,6 +41,13 @@ public class Species
         return result;
     }
 
+    public bool IsBreedExist(Breed breed)
+    {
+        var selectedBreeds = from item in _breeds where item.Id == breed.Id select item;
+        
+        return selectedBreeds.Count()!=0;
+    }
+
     public static Result<Species> Create(string name)
     {
         if (string.IsNullOrWhiteSpace(name))

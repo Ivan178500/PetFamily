@@ -9,45 +9,26 @@ public class Volunteer
     private readonly List<Requisite> _requisites;
     private readonly List<Pet> _pets;
     
-    private Volunteer()
+    private Volunteer(FullName name, Email emailAddress)
     {
         Id = Guid.NewGuid();
         _socialNetworks = [];
         _pets = [];
         _requisites = [];
+        Name = name;
+        EmailAddress = emailAddress;
     }
     
     public Guid Id { get;}
-    public string FullName { get; private set; }
-    public string Email { get; private set; }
+    public FullName Name { get; }
+    public Email EmailAddress { get; }
     public string Description { get; private set; }
     public uint ExperienceInYears { get; private set; }
     public string PhoneNumber { get; private set; }
     public IReadOnlyList<SocialNetwork> SocialNetworks => _socialNetworks;
     public IReadOnlyList<Requisite> Requisites => _requisites;
     public IReadOnlyList<Pet> Pets => _pets;
-
-    private Result SetName(string fullName)
-    {
-        if (string.IsNullOrWhiteSpace(fullName))
-            return Result.Failure("Name is not be empty");
-        
-        FullName = fullName;
-        return Result.Success();
-    }
-
-    private Result SetEmail(string email)
-    {
-        Regex regex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-        bool isCorrect = regex.IsMatch(email);
-        
-        if (isCorrect==false)
-            return Result.Failure("Email is not correct");
-        
-        Email = email;
-        return Result.Success();
-    }
-    
+   
     public void AddSocialNetwork(SocialNetwork socialNetwork)
     {
         _socialNetworks.Add(socialNetwork);
@@ -65,35 +46,23 @@ public class Volunteer
 
     public int GetPetsFoundHomeCount()
     {
-        int count = 0;
-        
-        foreach (var pet in _pets)
-            if (pet.HelpStatus == HelpStatus.FoundHome)
-                count++;
+        var selectedPets = from pet in _pets where pet.HelpStatus == HelpStatus.FoundHome select pet;
 
-        return count;
+        return selectedPets.Count();
     }
 
     public int GetPetsLookingHomeCount()
     {
-        int count = 0;
-        
-        foreach (var pet in _pets)
-            if (pet.HelpStatus == HelpStatus.LookingHome)
-                count++;
+        var selectedPets = from pet in _pets where pet.HelpStatus == HelpStatus.LookingHome select pet;
 
-        return count;
+        return selectedPets.Count();
     }
     
     public int GetPetsNeedHelpCount()
     {
-        int count = 0;
-        
-        foreach (var pet in _pets)
-            if (pet.HelpStatus == HelpStatus.NeedHelp)
-                count++;
+        var selectedPets = from pet in _pets where pet.HelpStatus == HelpStatus.NeedHelp select pet;
 
-        return count;
+        return selectedPets.Count();
     }
 
     public Result<SocialNetwork> AddSocialNetwork(string name, string url)
@@ -106,38 +75,16 @@ public class Volunteer
         return result;
     }
     
-    public static Result<Volunteer> Create(string fullName, string email)
+    public static Result<Volunteer> Create(string surname, string name, string fathername, string emailAddress)
     {
-        var volunteer = new Volunteer();
-        var resultFullName = volunteer.SetName(fullName);
-        var resultEmail = volunteer.SetEmail(email);
+        var resultFullName = FullName.Create(surname, name, fathername);
+        var resultEmail = Email.Create(emailAddress);
 
         if (resultFullName.IsFailure || resultEmail.IsFailure)
             return Result.Failure<Volunteer>(resultFullName.Error + " " + resultEmail.Error);
+        
+        var volunteer = new Volunteer(resultFullName.Value, resultEmail.Value);
 
         return Result.Success<Volunteer>(volunteer);
-    }
-}
-
-public class SocialNetwork
-{
-    private SocialNetwork(string name, string url)
-    {
-        Name = name;
-        Url = url;
-    }
-    
-    public string Name { get; private set; }
-    public string Url { get; private set; }
-    
-    public static Result<SocialNetwork> Create(string name, string url)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return Result.Failure<SocialNetwork>("Name is not be empty");
-
-        if (string.IsNullOrWhiteSpace(url))
-            return Result.Failure<SocialNetwork>("Url is not be empty");
-
-        return Result.Success<SocialNetwork>(new SocialNetwork(name, url));
     }
 }

@@ -21,17 +21,16 @@ public class Pet
         IsCastrate = false;
         BirthDay = birthDay;
         IsVaccinated = false;
-        HelpStatus = "";
         CreateDate = DateOnly.FromDateTime(DateTime.Today);
         SpeciesId = species.Id;
         BreedId = breed.Id;
     }
     
     public Guid Id { get; }
-    public string Name { get; private set; }
-    public string Species { get; private set; }
+    public string Name { get; }
+    public string Species { get; }
     public string Description { get; private set; }
-    public string Breed { get; private set;}
+    public string Breed { get; }
     public string Color { get; private set;}
     public string HealthInfo { get; private set; }
     public string Address { get; private set; }
@@ -41,18 +40,12 @@ public class Pet
     public bool IsCastrate { get; private set; }
     public DateOnly BirthDay { get; }
     public bool IsVaccinated { get; private set; }
-    public string HelpStatus { get; private set; }
+    public HelpStatus HelpStatus { get; private set; }
     public Requisite Requisite { get; private set; }
     public DateOnly CreateDate { get; }
     public Guid SpeciesId { get; }
     public Guid BreedId { get; }
-    
 
-    public void SetName(string name)
-    {
-        Name = name;
-    }
-    
     public void SetDescription(string description)
     {
         Description = description;
@@ -101,7 +94,7 @@ public class Pet
         IsVaccinated = isVaccinated;
     }
 
-    public void SetHelpStatus(string helpStatus)
+    public void SetHelpStatus(HelpStatus helpStatus)
     {
         HelpStatus = helpStatus;
     }
@@ -115,47 +108,23 @@ public class Pet
 
     public static Result<Pet> Create(string name, Species.Species species, Breed breed, string color, DateOnly birthDay)
     {
+        string error = string.Empty;
+        
         if (string.IsNullOrWhiteSpace(name))
-            return Result.Failure<Pet>("Name cannot be empty");
+            error += "Name cannot be empty ";
         
         if (string.IsNullOrWhiteSpace(color))
-            return Result.Failure<Pet>("Color cannot be empty");
+            error += "Color cannot be empty ";
         
         if (birthDay == DateOnly.FromDateTime(default(DateTime)))
-            return Result.Failure<Pet>("Birthday cannot be empty");
+            error += "Birthday cannot be empty ";
+
+        if (species.IsBreedExist(breed) == false)
+            error += "Breed not exist in species";
+
+        if (error != string.Empty)
+            return Result.Failure<Pet>(error);
 
         return Result.Success<Pet>(new Pet(name, species, breed, color, birthDay));
-    }
-}
-
-public static class HelpStatus
-{
-    public const string NeedHelp = "Нуждается в помощи";
-    public const string LookingHome = "Ищет дом";
-    public const string FoundHome = "Нашел дом";
-}
-
-public class Requisite
-{
-    private Requisite( string name, string description)
-    {
-        Name = name;
-        Description = description;
-    }
-    
-    public string Name { get; private set; }
-    public string Description { get; private set; }
-
-    public void SetDescription(string description)
-    {
-        Description = description;
-    }
-
-    public static Result<Requisite> Create(string name, string description = "")
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return Result.Failure<Requisite>("Name cannot be empty");
-
-        return Result.Success<Requisite>(new Requisite(name, description));
     }
 }
